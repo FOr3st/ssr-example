@@ -4,6 +4,10 @@
 
 Here we builing Proof of Concept for React Server Side Rendereing with create-react-app (preferably without using of eject) and Typescript
 
+## Demo app
+
+https://ssr-example-test.herokuapp.com/
+
 ## Process
 
 ### Project setup
@@ -196,6 +200,11 @@ npm start
 Install Heroku CLI, then login into it:
 ```shell
 heroku login
+```
+
+*Important!* Make sure that Heroku config production mode is set to `false`, otherwise devDependencies from `package.json` won't be installed:
+```shell
+heroku config:set NPM_CONFIG_PRODUCTION=false
 ```
 
 Push project to Heroku Git:
