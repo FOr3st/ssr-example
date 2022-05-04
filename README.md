@@ -13,9 +13,9 @@ Creating an empty create-react-app project with typescript:
 npx create-react-app my-app --template typescript
 ```
 
-Temporarily downgrading React to version 18 due to issue:
+Temporarily downgrading React to version 18 due to issue when running client (https://github.com/vercel/next.js/discussions/35773)
 ```shell
-npm i react@17.0.2 react-dom@17.0.2 @types/react@17.0.2 @types/react-dom@17.0.2
+npm i react@17.0.2 react-dom@17.0.2 @types/react@17.0.2 @types/react-dom@17.0.2 -S
 ```
 
 Adding project depencencies:
@@ -179,7 +179,7 @@ npm run build:server
 npm run start:server
 ```
 
-### Summarize
+### Finalizing
 
 After adding following commands to `package.json`:
 ```json
@@ -192,10 +192,28 @@ The app could be started with:
 npm start
 ```
 
+## Deploy to Heroku
+Install Heroku CLI, then login into it:
+```shell
+heroku login
+```
+
+Push project to Heroku Git:
+```shell
+heroku git:remote -a ssr-example-test
+```
+
+Push to Heroku Git triggers `npm start` and runs the app:
+```shell
+git push heroku master
+```
+
 ## Used materials
 
 * https://github.com/haukurk/cra-ssr-ts-recipe (has more complex configs incl. routing)
 * https://www.digitalocean.com/community/tutorials/react-server-side-rendering (full example didn't work)
+* https://github.com/reactwg/react-18/discussions/5
+* https://betterprogramming.pub/how-to-deploy-your-react-app-to-heroku-aedc28b218ae
 
 ## Issues
 
