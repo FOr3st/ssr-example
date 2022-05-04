@@ -1,46 +1,203 @@
-# Getting Started with Create React App
+# React SSR POC
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## About
 
-## Available Scripts
+Here we builing Proof of Concept for React Server Side Rendereing with create-react-app (preferably without using of eject) and Typescript
 
-In the project directory, you can run:
+## Process
 
-### `npm start`
+### Project setup
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Creating an empty create-react-app project with typescript:
+```shell
+npx create-react-app my-app --template typescript
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Temporarily downgrading React to version 18 due to issue:
+```shell
+npm i react@17.0.2 react-dom@17.0.2 @types/react@17.0.2 @types/react-dom@17.0.2
+```
 
-### `npm test`
+Adding project depencencies:
+```shell
+npm i app-root-path -S
+npm i ts-loader -D 
+npm i cross-env -S
+npm i concurrently -D // runs concurrently several tasks during `npm start`
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Template update
 
-### `npm run build`
+Remove `logo.svg`, `App.css`, `App.test.tsx`, `index.css` created by create-react-app template and add `Counter` component. 
+```jsx
+import React from 'react';
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+export interface CounterState {
+  counter: number;
+}
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+export class Counter extends React.Component<{}, CounterState> {
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  constructor(props: any) {
+    super(props);
+    this.state = { counter: 0 };
+  }
 
-### `npm run eject`
+  incrementCounter() {
+    this.setState({ counter: this.state.counter + 1 });
+  }
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+  render() {
+    return (
+      <div>
+        <h1>counter at: {this.state.counter}</h1>
+        <button
+          onClick={() => this.incrementCounter()}
+        >+</button>
+      </div>
+    );
+  }
+}
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Make sure `App` imports and renders it.
+```jsx
+import React from 'react';
+import { Counter } from './Counter';
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+function App() {
+  return (
+    <div>
+      <header>
+        <Counter />
+      </header>
+    </div>
+  );
+}
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+export default App;
+```
 
-## Learn More
+### Server setup and configuration
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Create file for server code `server/index.ts`
+```jsx
+import path from 'path';
+import fs from 'fs';
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
+import express from 'express';
+
+import App from '../src/App';
+
+const PORT = process.env.PORT || 3006;
+const app = express();
+
+app.get('/', (req, res) => {
+    console.log("> / accessed")
+
+    const app = ReactDOMServer.renderToString(<App />);
+    const indexFile = path.resolve('./build/index.html');
+  
+    fs.readFile(indexFile, 'utf8', (err, data) => {
+      if (err) {
+        console.error('Something went wrong:', err);
+        return res.status(500).send('Oops, better luck next time!');
+      }
+  
+      console.log("> returning compiled")
+      return res.send(
+        data.replace('<div id="root"></div>', `<div id="root">${app}</div>`)
+      );
+    });
+  });
+  
+  app.use(express.static('./build'));
+  
+  app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}`);
+  });
+```
+
+Create file for server config `webpack.server.config.js`
+```json
+const root = require('app-root-path').path;
+module.exports = {
+    entry: `${root}/server/index.tsx`,
+    target: 'node',
+    node: {
+        __filename: true,
+        __dirname: true
+    },
+    externals: [
+        /^[a-z\-0-9]+$/ // Ignore node_modules folder,
+    ],
+    output: {
+        filename: 'compiled', // output file
+        path: `${root}/build_server`,
+        libraryTarget: "commonjs"
+    },
+    resolve: {
+        modules: [`${root}/node_modules`],
+        // Add in `.ts` and `.tsx` as a resolvable extension.
+        extensions: ['.config.js', '.web.js', '.ts', '.tsx', '.js'],
+    },
+    module: {
+        rules: [{
+            // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
+            test: /\.(ts|tsx)$/,
+            exclude: [/node_modules/],
+            use: [
+                {
+                    loader: 'ts-loader'
+                }
+            ]
+        }]
+    }
+};
+```
+
+Updating package.json scripts section:
+```json
+"start:server": "cross-env NODE_ENV=development node build_server/compiled",
+"build:server": "node node_modules/webpack/bin/webpack.js --config webpack.server.config.js",
+```
+
+*Important!* In `tsconfig.json` rule `"noEmit": true` should be removed as it creates no emit error duing server build
+
+### Running server
+
+Build project (creates build/index.html referenced in server files):
+```shell
+npm run build
+```
+
+And then:
+```shell
+npm run build:server
+npm run start:server
+```
+
+### Summarize
+
+After adding following commands to `package.json`:
+```json
+"start": "concurrently \"npm run build && npm run start:server\" \"react-scripts-ts start\"",
+"build": "npm run build:client && npm run build:server",
+```
+
+The app could be started with:
+```shell
+npm start
+```
+
+## Used materials
+
+* https://github.com/haukurk/cra-ssr-ts-recipe (has more complex configs incl. routing)
+* https://www.digitalocean.com/community/tutorials/react-server-side-rendering (full example didn't work)
+
+## Issues
+
+* Still having issue with React 18. There is an open issue for that
+
