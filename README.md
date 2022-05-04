@@ -121,7 +121,7 @@ app.get('/', (req, res) => {
 ```
 
 Create file for server config `webpack.server.config.js`
-```json
+```javascript
 const root = require('app-root-path').path;
 module.exports = {
     entry: `${root}/server/index.tsx`,
