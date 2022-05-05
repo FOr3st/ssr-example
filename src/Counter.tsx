@@ -1,28 +1,16 @@
-import React from 'react';
+import React, { useState, useCallback } from "react";
 
-export interface CounterState {
-  counter: number;
-}
+export const Counter = () => {
+  const [counter, setCounter] = useState(0);
 
-export class Counter extends React.Component<{}, CounterState> {
+  const incrementCounter = useCallback(() => {
+    setCounter(counter + 1);
+  }, [counter]);
 
-  constructor(props: any) {
-    super(props);
-    this.state = { counter: 0 };
-  }
-
-  incrementCounter() {
-    this.setState({ counter: this.state.counter + 1 });
-  }
-
-  render() {
-    return (
-      <div>
-        <h1>counter at: {this.state.counter}</h1>
-        <button
-          onClick={() => this.incrementCounter()}
-        >+</button>
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <h1>counter at: {counter}</h1>
+      <button onClick={incrementCounter}>+</button>
+    </div>
+  );
+};

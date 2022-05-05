@@ -11,8 +11,6 @@ const PORT = process.env.PORT || 3006;
 const app = express();
 
 app.get('/', (req, res) => {
-    console.log("> / accessed")
-
     const app = ReactDOMServer.renderToString(<App />);
     const indexFile = path.resolve('./build/index.html');
   
@@ -22,7 +20,6 @@ app.get('/', (req, res) => {
         return res.status(500).send('Oops, better luck next time!');
       }
   
-      console.log("> returning compiled")
       return res.send(
         data.replace('<div id="root"></div>', `<div id="root">${app}</div>`)
       );

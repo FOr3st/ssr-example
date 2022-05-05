@@ -34,34 +34,22 @@ npm i concurrently -D // runs concurrently several tasks during `npm start`
 
 Remove `logo.svg`, `App.css`, `App.test.tsx`, `index.css` created by create-react-app template and add `Counter` component. 
 ```jsx
-import React from 'react';
+import React, { useState, useCallback } from "react";
 
-export interface CounterState {
-  counter: number;
-}
+export const Counter = () => {
+  const [counter, setCounter] = useState(0);
 
-export class Counter extends React.Component<{}, CounterState> {
+  const incrementCounter = useCallback(() => {
+    setCounter(counter + 1);
+  }, [counter]);
 
-  constructor(props: any) {
-    super(props);
-    this.state = { counter: 0 };
-  }
-
-  incrementCounter() {
-    this.setState({ counter: this.state.counter + 1 });
-  }
-
-  render() {
-    return (
-      <div>
-        <h1>counter at: {this.state.counter}</h1>
-        <button
-          onClick={() => this.incrementCounter()}
-        >+</button>
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <h1>counter at: {counter}</h1>
+      <button onClick={incrementCounter}>+</button>
+    </div>
+  );
+};
 ```
 
 Make sure `App` imports and renders it.
@@ -99,8 +87,6 @@ const PORT = process.env.PORT || 3006;
 const app = express();
 
 app.get('/', (req, res) => {
-    console.log("> / accessed")
-
     const app = ReactDOMServer.renderToString(<App />);
     const indexFile = path.resolve('./build/index.html');
   
@@ -110,7 +96,6 @@ app.get('/', (req, res) => {
         return res.status(500).send('Oops, better luck next time!');
       }
   
-      console.log("> returning compiled")
       return res.send(
         data.replace('<div id="root"></div>', `<div id="root">${app}</div>`)
       );
@@ -123,6 +108,8 @@ app.get('/', (req, res) => {
     console.log(`Server is listening on port ${PORT}`);
   });
 ```
+
+*Important!* Make sure `process.env.PORT` is used to set app port as Heroku will populate this property.
 
 Create file for server config `webpack.server.config.js`
 ```javascript
